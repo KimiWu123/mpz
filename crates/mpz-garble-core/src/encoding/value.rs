@@ -5,6 +5,7 @@ use std::ops::BitXor;
 
 use mpz_circuits::types::{StaticValueType, TypeError, Value, ValueType};
 use mpz_core::{hash::DomainSeparatedHash, impl_domain_separated_hash, Block};
+use sha3::{Digest, Sha3_256};
 
 use crate::encoding::{state, Delta, Label, LabelState, Labels};
 

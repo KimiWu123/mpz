@@ -4,8 +4,10 @@
 //!
 //! Default implementations use [Blake3](https://docs.rs/blake3/latest/blake3/) as the hash function
 
-use blake3::Hasher;
+// use blake3::Hasher;
+// use core::hash::Hasher;
 use serde::{Deserialize, Serialize};
+pub use sha3::{Digest, Sha3_256};
 
 use crate::serialize::CanonicalSerialize;
 
@@ -33,7 +35,10 @@ where
 {
     /// Creates a hash of self
     fn hash(&self) -> Hash {
-        Hash(blake3::hash(&self.to_bytes()).into())
+        let mut h = Sha3_256::new();
+        h.update(&self.to_bytes());
+        Hash(h.finalize().into())
+        // Hash(blake3::hash(&self.to_bytes()).into())
     }
 }
 
@@ -45,7 +50,7 @@ where
     Self: serde::Serialize,
 {
     /// Creates a new hasher seeded with the domain separator
-    fn hasher() -> Hasher;
+    fn hasher() -> sha3::Sha3_256;
 
     /// Creates a hash of self with a domain separator
     fn domain_separated_hash(&self) -> Hash {
@@ -73,11 +78,11 @@ where
 ///     let foo = Foo(42u64);
 ///     let hash = foo.domain_separated_hash();
 ///     
-///     let mut seed_hasher = blake3::Hasher::new();
+///     let mut seed_hasher = sha3::Sha3_256::new();
 ///     seed_hasher.update("FOO".as_bytes());
 ///     let seed = seed_hasher.finalize();
 ///
-///     let mut hasher = blake3::Hasher::new();
+///     let mut hasher = sha3::Sha3_256::new();
 ///     hasher.update(seed.as_bytes().as_slice());
 ///     hasher.update(42u64.to_le_bytes().as_slice());
 ///     let expected_hash = hasher.finalize();
@@ -89,18 +94,17 @@ where
 macro_rules! impl_domain_separated_hash {
     ($ty:ty, $domain:expr) => {
         impl DomainSeparatedHash for $ty {
-            fn hasher() -> blake3::Hasher {
-                static HASHER: once_cell::sync::Lazy<blake3::Hasher> =
-                    once_cell::sync::Lazy::new(|| {
-                        let mut hasher = blake3::Hasher::new();
-                        hasher.update($domain.as_bytes());
-                        // Fixed length seed computed from the domain salt
-                        let seed = hasher.finalize();
+            fn hasher() -> Sha3_256 {
+                static HASHER: once_cell::sync::Lazy<Sha3_256> = once_cell::sync::Lazy::new(|| {
+                    let mut hasher = Sha3_256::new();
+                    hasher.update($domain.as_bytes());
+                    // Fixed length seed computed from the domain salt
+                    let seed = hasher.finalize();
 
-                        let mut hasher = blake3::Hasher::new();
-                        hasher.update(seed.as_bytes().as_slice());
-                        hasher
-                    });
+                    let mut hasher = Sha3_256::new();
+                    hasher.update(seed.as_slice());
+                    hasher
+                });
 
                 HASHER.clone()
             }

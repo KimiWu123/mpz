@@ -19,6 +19,7 @@ mpz-circuits.workspace = true
 aes = { workspace = true, features = [] }
 cipher.workspace = true
 blake3.workspace = true
+sha3.workspace = true
 rand.workspace = true
 rand_core.workspace = true
 rand_chacha.workspace = true
